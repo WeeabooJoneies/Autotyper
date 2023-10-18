@@ -1,8 +1,8 @@
 import time
 import threading
 import tkinter as tk
-import pyautogui
 from pynput import keyboard
+import pyautogui
 
 def start_spam(character, interval, repetitions):
     def spam_thread():
@@ -10,6 +10,25 @@ def start_spam(character, interval, repetitions):
             if not spamming:
                 break
             pyautogui.typewrite(character)
+            time.sleep(interval)
+
+    spam_thread = threading.Thread(target=spam_thread)
+    spam_thread.start()
+
+def start_gameplay_spam(character, interval, repetitions):
+    def spam_thread():
+        for _ in range(repetitions) if repetitions is not None else iter(int, 1):
+            if not spamming:
+                break
+
+            # Create a keyboard controller
+            controller = keyboard.Controller()
+
+            # Use pynput.keyboard for gameplay input
+            controller.type(character)
+            controller.press(keyboard.Key.enter)
+            controller.release(keyboard.Key.enter)
+
             time.sleep(interval)
 
     spam_thread = threading.Thread(target=spam_thread)
@@ -41,10 +60,14 @@ def start_spam_from_ui():
     global spamming
     global start_button
     global stop_button
+    global gameplay_var
+
     if not spamming:
         character = char_entry.get()
         interval = interval_entry.get()
         repetitions = repetitions_entry.get()
+        gameplay_mode = gameplay_var.get()
+
         if not character:
             spam_label.config(text="Please enter a character to spam.")
             return
@@ -55,8 +78,14 @@ def start_spam_from_ui():
             spam_label.config(text="Repetitions should be a positive integer.")
             return
         spam_label.config(text="")
+
         spamming = True
-        start_spam(character, float(interval), int(repetitions) if repetitions_var.get() == "Specific" else None)
+
+        if gameplay_mode == "Text":
+            start_spam(character, float(interval), int(repetitions) if repetitions_var.get() == "Specific" else None)
+        elif gameplay_mode == "Gameplay":
+            start_gameplay_spam(character, float(interval), int(repetitions) if repetitions_var.get() == "Specific" else None)
+
         start_button.config(state=tk.DISABLED)
         stop_button.config(state=tk.NORMAL)
 
@@ -87,7 +116,7 @@ def validate_input(P):
 
 root = tk.Tk()
 root.title("Spam App")
-root.geometry("800x400")  # Set the window size to 800x400
+root.geometry("800x400")
 
 char_label = tk.Label(root, text="Enter a character:")
 char_label.pack()
@@ -115,6 +144,14 @@ repetitions_radio_specific.pack()
 
 repetitions_entry = tk.Entry(root, validate="key", validatecommand=(validate_interval_input, '%P'))
 repetitions_entry.pack()
+
+# Add radio buttons for gameplay mode
+gameplay_var = tk.StringVar(value="Text")
+gameplay_radio_text = tk.Radiobutton(root, text="Text", variable=gameplay_var, value="Text")
+gameplay_radio_text.pack()
+
+gameplay_radio_gameplay = tk.Radiobutton(root, text="Gameplay", variable=gameplay_var, value="Gameplay")
+gameplay_radio_gameplay.pack()
 
 spam_button = tk.Button(root, text="Start Spam (F6)", command=start_spam_from_ui)
 spam_button.pack()
