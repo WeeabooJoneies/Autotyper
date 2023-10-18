@@ -4,12 +4,16 @@ import tkinter as tk
 from pynput import keyboard
 import pyautogui
 
-def start_spam(character, interval, repetitions):
+def start_spam(character, interval, repetitions, timeBetween):
     def spam_thread():
         for _ in range(repetitions) if repetitions is not None else iter(int, 1):
-            if not spamming:
-                break
-            pyautogui.typewrite(character)
+            if(not isinstance(timeBetween,str)):
+                for i in range(len(character)):
+                    if not spamming:
+                        break
+                    pyautogui.typewrite(character[i])
+                    if(timeBetween > 0): time.sleep(timeBetween)
+            else: pyautogui.typewrite(character)
             time.sleep(interval)
 
     spam_thread = threading.Thread(target=spam_thread)
@@ -65,6 +69,7 @@ def start_spam_from_ui():
     if not spamming:
         character = char_entry.get()
         interval = interval_entry.get()
+        intervalC = interval_char.get()
         repetitions = repetitions_entry.get()
         gameplay_mode = gameplay_var.get()
 
@@ -74,6 +79,9 @@ def start_spam_from_ui():
         if not is_float(interval):
             spam_label.config(text="Interval should be a number.")
             return
+        if (not is_float(intervalC) and intervalC != ""):
+            spam_label.config(text="'Wait Between Characters' should be a number.")
+            return
         if repetitions_var.get() == "Specific" and (not is_int(repetitions) or int(repetitions) <= 0):
             spam_label.config(text="Repetitions should be a positive integer.")
             return
@@ -81,8 +89,11 @@ def start_spam_from_ui():
 
         spamming = True
 
+        betweenSpeed = 0
+        if(intervalC != ""): betweenSpeed = intervalC
+
         if gameplay_mode == "Text":
-            start_spam(character, float(interval), int(repetitions) if repetitions_var.get() == "Specific" else None)
+            start_spam(character, float(interval), int(repetitions) if repetitions_var.get() == "Specific" else None, betweenSpeed)
         elif gameplay_mode == "Gameplay":
             start_gameplay_spam(character, float(interval), int(repetitions) if repetitions_var.get() == "Specific" else None)
 
@@ -130,6 +141,12 @@ interval_label.pack()
 validate_interval_input = root.register(validate_input)
 interval_entry = tk.Entry(root, validate="key", validatecommand=(validate_interval_input, '%P'))
 interval_entry.pack()
+
+repetitions_label_char = tk.Label(root, text="Wait Between Characters")
+repetitions_label_char.pack()
+
+interval_char = tk.Entry(root, validate="key", validatecommand=(validate_interval_input, '%P'))
+interval_char.pack()
 
 repetitions_label = tk.Label(root, text="Repetitions:")
 repetitions_label.pack()
